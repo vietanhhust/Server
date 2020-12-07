@@ -7,12 +7,15 @@ namespace ServerAPI.Model.Database
 {
     public partial class RoleActive
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
         public int GroupRoleId { get; set; }
-        public int RoleId { get; set; }
-        public bool Active { get; set; }
+        public int FrontendCode { get; set; }
+        public bool? IsView { get; set; }
+        public bool? IsCreate { get; set; }
+        public bool? IsPut { get; set; }
+        public bool? IsDelete { get; set; }
 
+        public virtual FrontendRole FrontendCodeNavigation { get; set; }
         public virtual GroupRole GroupRole { get; set; }
-        public virtual Role Role { get; set; }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.Configuration;
 
 #nullable disable
 
@@ -9,6 +8,7 @@ namespace ServerAPI.Model.Database
 {
     public partial class ClientManagerContext : DbContext
     {
+
         public ClientManagerContext(DbContextOptions<ClientManagerContext> options)
             : base(options)
         {
@@ -18,6 +18,7 @@ namespace ServerAPI.Model.Database
         public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<CategoryItem> CategoryItems { get; set; }
         public virtual DbSet<Client> Clients { get; set; }
+        public virtual DbSet<FrontendRole> FrontendRoles { get; set; }
         public virtual DbSet<GroupClient> GroupClients { get; set; }
         public virtual DbSet<GroupRole> GroupRoles { get; set; }
         public virtual DbSet<ManagingAccount> ManagingAccounts { get; set; }
@@ -26,9 +27,10 @@ namespace ServerAPI.Model.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-            }
+            //if (!optionsBuilder.IsConfigured)
+            //{
+            //    optionsBuilder.UseSqlServer("Server=.\\SQLExpress;Database=ClientManager;Trusted_Connection=True;");
+            //}
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,11 +39,11 @@ namespace ServerAPI.Model.Database
             {
                 entity.ToTable("Account");
 
-                entity.Property(e => e.AccountName)
-                    .IsRequired()
-                    .HasMaxLength(50);
+                entity.Property(e => e.AccountName).IsRequired();
 
                 entity.Property(e => e.Address).HasMaxLength(50);
+
+                entity.Property(e => e.Balance).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Credit).HasDefaultValueSql("((0))");
 
@@ -53,9 +55,9 @@ namespace ServerAPI.Model.Database
 
                 entity.Property(e => e.IdentityNumber).HasMaxLength(15);
 
-                entity.Property(e => e.IsActived)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.IsActived).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.IsLogged).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Password).IsRequired();
 
@@ -88,11 +90,18 @@ namespace ServerAPI.Model.Database
             {
                 entity.ToTable("Client");
 
+                entity.Property(e => e.IsNew).HasDefaultValueSql("((1))");
+
                 entity.HasOne(d => d.ClientNavigation)
                     .WithMany(p => p.Clients)
                     .HasForeignKey(d => d.ClientId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Client_GroupClient");
+            });
+
+            modelBuilder.Entity<FrontendRole>(entity =>
+            {
+                entity.ToTable("FrontendRole");
             });
 
             modelBuilder.Entity<GroupClient>(entity =>
@@ -124,6 +133,7 @@ namespace ServerAPI.Model.Database
                 entity.HasOne(d => d.GroupRole)
                     .WithMany(p => p.ManagingAccounts)
                     .HasForeignKey(d => d.GroupRoleId)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_ManagingAccount_GroupRole");
             });
 
@@ -132,6 +142,10 @@ namespace ServerAPI.Model.Database
                 entity.ToTable("Role");
 
                 entity.Property(e => e.FrontEndId).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.Method)
+                    .IsRequired()
+                    .HasMaxLength(10);
 
                 entity.Property(e => e.RoleName)
                     .IsRequired()
@@ -144,17 +158,25 @@ namespace ServerAPI.Model.Database
             {
                 entity.ToTable("RoleActive");
 
+                entity.Property(e => e.IsCreate).HasColumnName("isCreate");
+
+                entity.Property(e => e.IsDelete).HasColumnName("isDelete");
+
+                entity.Property(e => e.IsPut).HasColumnName("isPut");
+
+                entity.Property(e => e.IsView).HasColumnName("isView");
+
+                entity.HasOne(d => d.FrontendCodeNavigation)
+                    .WithMany(p => p.RoleActives)
+                    .HasForeignKey(d => d.FrontendCode)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_RoleActive_FrontendRole");
+
                 entity.HasOne(d => d.GroupRole)
                     .WithMany(p => p.RoleActives)
                     .HasForeignKey(d => d.GroupRoleId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_RoleActive_GroupRole");
-
-                entity.HasOne(d => d.Role)
-                    .WithMany(p => p.RoleActives)
-                    .HasForeignKey(d => d.RoleId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RoleActive_Role");
             });
 
             OnModelCreatingPartial(modelBuilder);

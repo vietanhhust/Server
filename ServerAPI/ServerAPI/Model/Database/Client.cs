@@ -11,7 +11,7 @@ namespace ServerAPI.Model.Database
         public int ClientId { get; set; }
         public int? ClientGroupId { get; set; }
         public string Description { get; set; }
-        public bool IsNew { get; set; }
+        public bool? IsNew { get; set; }
 
         public virtual GroupClient ClientNavigation { get; set; }
     }
