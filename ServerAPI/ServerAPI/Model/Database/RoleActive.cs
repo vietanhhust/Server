@@ -9,7 +9,7 @@ namespace ServerAPI.Model.Database
     {
         public int? Id { get; set; }
         public int GroupRoleId { get; set; }
-        public int FrontendCode { get; set; }
+        public int? FrontendRoleId { get; set; }
         public bool? IsView { get; set; }
         public bool? IsCreate { get; set; }
         public bool? IsPut { get; set; }

@@ -60,6 +60,13 @@ namespace ServerAPI.Controllers.CURDs
         public  IActionResult PutManagingAccount(int id, [FromBody] ManagingAccount managingAccount)
         {
             managingAccount.Id = id;
+            if (id == 1)
+            {
+                return BadRequest(new ErrorModel
+                {
+                    Messege = "Tài khoản không thể sửa"
+                });
+            }
             var managingAccountFound = this.entityCRUD.GetAll<ManagingAccount>(x => x.Id == id).FirstOrDefault(); 
             if(managingAccountFound is null)
             {
@@ -129,7 +136,7 @@ namespace ServerAPI.Controllers.CURDs
                 });
             }
             // Check tên tài khoản trùng
-            if (this.entityCRUD.GetAll<ManagingAccount>().Any(x => x.Name==managingAccount.Name)) {
+            if (this.entityCRUD.GetAll<ManagingAccount>().Any(x => x.Name.ToLower()==managingAccount.Name.ToLower())) {
                 return BadRequest(new ErrorModel
                 {
                     Messege = "Tên tài khoản đã tồn tại"
@@ -163,6 +170,13 @@ namespace ServerAPI.Controllers.CURDs
         [HttpDelete("{id}")]
         public IActionResult DeleteManagingAccount(int id)
         {
+            if (id == 1)
+            {
+                return BadRequest(new ErrorModel
+                {
+                    Messege = "Tài khoản quản trị không thể xóa"
+                });
+            }
             var accountFound = this.entityCRUD.GetAll<ManagingAccount>(x => x.Id == id).FirstOrDefault(); 
             if(accountFound is null)
             {

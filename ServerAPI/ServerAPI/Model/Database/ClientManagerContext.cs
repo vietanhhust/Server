@@ -141,15 +141,12 @@ namespace ServerAPI.Model.Database
             {
                 entity.ToTable("Role");
 
-                entity.Property(e => e.FrontEndId).HasDefaultValueSql("((0))");
+                entity.Property(e => e.FrontendCode).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Method)
                     .IsRequired()
                     .HasMaxLength(10);
 
-                entity.Property(e => e.RoleName)
-                    .IsRequired()
-                    .HasMaxLength(50);
 
                 entity.Property(e => e.Template).IsRequired();
             });
@@ -168,7 +165,7 @@ namespace ServerAPI.Model.Database
 
                 entity.HasOne(d => d.FrontendCodeNavigation)
                     .WithMany(p => p.RoleActives)
-                    .HasForeignKey(d => d.FrontendCode)
+                    .HasForeignKey(d => d.FrontendRoleId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_RoleActive_FrontendRole");
 

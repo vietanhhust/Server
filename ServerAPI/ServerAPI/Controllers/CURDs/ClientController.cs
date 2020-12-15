@@ -23,8 +23,6 @@ namespace ServerAPI.Controllers.CURDs
             this.entityCRUD = entityCRUD;
         }
 
-
-
         // Lấy danh sách tất cả các client về
         [HttpGet]
         public IActionResult getAllClient()
@@ -51,7 +49,7 @@ namespace ServerAPI.Controllers.CURDs
             }
         }
 
-        // Lấy về list cliet theo nhóm máy
+        // Lấy về list client theo nhóm máy
         [HttpGet]
         [Route("/group/{id}/clients")]
         public IActionResult getClientOfGroup(int? id)
@@ -68,26 +66,6 @@ namespace ServerAPI.Controllers.CURDs
             else
             {
                 return Ok(this.entityCRUD.GetAll<Client>().Where(client => client.ClientGroupId == group.Id));
-            }
-        }
-
-        // Thêm mới client
-        [HttpPost]
-        public IActionResult addClient([FromBody] Client client)
-        {
-            client.Id = null;
-            client.ClientGroupId = 1;
-            if (this.entityCRUD.Add<Client>(client).Result)
-            {
-                return Ok(true); 
-            }
-            else
-            {
-                return BadRequest(new ErrorModel
-                {
-                    Messege = "Thao tác thêm thất bại, vui lòng điền đầy đủ các trường",
-                    Status = 400
-                }); 
             }
         }
 
@@ -125,7 +103,6 @@ namespace ServerAPI.Controllers.CURDs
 
         }
 
-
         // Thêm mới Client, nhưng Client Id mới sẽ là tự đánh, bằng cách tìm số máy lớn nhất rồi cộng thêm 1;
         [HttpPost]
         public IActionResult Post([FromBody] Client client)
@@ -134,6 +111,8 @@ namespace ServerAPI.Controllers.CURDs
             var maxId = this.GetMaxClientId();
             client.ClientId = maxId == 0 ? 1 : maxId + 1;
             client.IsNew = true; 
+            client.ClientGroupId = 1;
+            
             if (this.entityCRUD.Add<Client>(client).Result)
             {
                 return Ok(client.ClientId);

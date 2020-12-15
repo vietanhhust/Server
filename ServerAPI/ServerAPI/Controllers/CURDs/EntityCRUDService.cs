@@ -49,6 +49,27 @@ namespace ServerAPI.Controllers.CURDs
             }
         }
 
+        // Add List Entity
+        public async Task<bool> AddRange<T>(List<T> list) where T: class
+        {
+            var transaction = await this.context.Database.BeginTransactionAsync();
+            try
+            {
+                await transaction.CreateSavepointAsync("Before_Add_List");
+                this.context.Set<T>().AddRange(list);
+                await this.context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                await transaction.ReleaseSavepointAsync("Before_Add_List");
+                return await Task<bool>.Factory.StartNew(() => true);
+            }
+            catch
+            {
+                await transaction.RollbackToSavepointAsync("Before_Add_List");
+                await transaction.ReleaseSavepointAsync("Before_Add_List");
+                return await Task<bool>.Factory.StartNew(() => false);
+            }
+        }
+
         // Put entity
         public async Task<bool> Update<T, F>(T source, F destination) 
             where T: class 
@@ -73,6 +94,26 @@ namespace ServerAPI.Controllers.CURDs
             }
         }
 
+        // Put List Entity 
+        public async Task<bool> UpdateRange<T>(List<T> list) where T: class{
+            var transaction = await this.context.Database.BeginTransactionAsync();
+            try
+            {
+                await transaction.CreateSavepointAsync("Before_Update_List");
+                this.context.Set<T>().UpdateRange(list);
+                await this.context.SaveChangesAsync(); 
+                await transaction.CommitAsync();
+                await transaction.ReleaseSavepointAsync("Before_Update_List");
+                return await Task<bool>.Factory.StartNew(() => true);
+            }
+            catch
+            {
+                await transaction.RollbackToSavepointAsync("Before_Update_List");
+                await transaction.ReleaseSavepointAsync("Before_Update_List");
+                return await Task<bool>.Factory.StartNew(() => false);
+            }
+        }
+
         //Delete entity
         public async Task<bool> Delete<T>(T t) where T: class
         {
@@ -92,6 +133,94 @@ namespace ServerAPI.Controllers.CURDs
                 await transaction.ReleaseSavepointAsync("Before_Delete");
                 return await Task<bool>.Factory.StartNew(() => false);
             }
+        }
+
+        // Delete List Entity 
+        public async Task<bool> DeleteRange<T>(List<T> list) where T : class
+        {
+            var transaction = await this.context.Database.BeginTransactionAsync();
+            try
+            {
+                await transaction.CreateSavepointAsync("Before_Delete_List");
+                this.context.Set<T>().RemoveRange(list);
+                await this.context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                await transaction.ReleaseSavepointAsync("Before_Delete_List");
+                return await Task<bool>.Factory.StartNew(() => true);
+            }
+            catch
+            {
+                await transaction.RollbackToSavepointAsync("Before_Delete_List");
+                await transaction.ReleaseSavepointAsync("Before_Delete_List");
+                return await Task<bool>.Factory.StartNew(() => false);
+            }
+        }
+
+        //Excute Command
+        public bool ExcuteCommand(string command, object param= null)
+        {
+            if(param is null)
+            {
+                try
+                {
+                    this.context.Database.ExecuteSqlRaw(command);
+                    this.context.SaveChanges();
+                    return true;
+                }catch
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                try
+                {
+                    this.context.Database.ExecuteSqlRawAsync(command, param);
+                    this.context.SaveChanges();
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
+
+        //Excute CommandAsync
+        public Task<bool> ExcuteCommandAsync(string command, object param = null)
+        {
+            if (param is null)
+            {
+                try
+                {
+                    this.context.Database.ExecuteSqlRawAsync(command);
+                    this.context.SaveChanges();
+                    return Task<bool>.Factory.StartNew(() => true);
+                }
+                catch
+                {
+                    return Task<bool>.Factory.StartNew(() => false);
+                }
+            }
+            else
+            {
+                try
+                {
+                    this.context.Database.ExecuteSqlRawAsync(command, param);
+                    this.context.SaveChanges();
+                    return Task<bool>.Factory.StartNew(() => true);
+                }
+                catch
+                {
+                    return Task<bool>.Factory.StartNew(() => false);
+                }
+            }
+        }
+
+        // UntrackDbContet 
+        public void UnTrackContext()
+        {
+            this.context.ChangeTracker.Clear(); 
         }
         
     }

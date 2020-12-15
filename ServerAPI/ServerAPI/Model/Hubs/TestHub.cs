@@ -24,6 +24,11 @@ namespace ServerAPI.Model.Hubs
         public override async Task OnConnectedAsync()
         {
             Console.WriteLine("Connect from: {0}", this.Context.ConnectionId);
+            Console.WriteLine(this.Context.GetHttpContext().Request.Headers[""]);
+            this.Context.GetHttpContext().Request.Headers.ToList().ForEach(item =>
+            {
+                Console.WriteLine(item.Key + " : " + item.Value);
+            });
             await base.OnConnectedAsync();
         }
 
@@ -36,14 +41,18 @@ namespace ServerAPI.Model.Hubs
         [HubMethodName("chat")]
         public Task Chat()
         {
-            List<string> items = new List<string>();
-            this.context.Categories.ToList().ForEach(item =>
-            {
-                items.Add(item.CategoryName);
-            });
-            // Dòng này để chứng minh là có thể DI HubContext vào HubContrustor
-            this.other.Clients.All.SendAsync("ServerReply", "Othrer");
-            return this.Clients.All.SendAsync("ServerReply", items);
+            
+            var account = this.context.Accounts.Where(item => item.AccountName.ToLower() == "first_user").FirstOrDefault();
+            //List<string> items = new List<string>();
+            //this.context.Categories.ToList().ForEach(item =>
+            //{
+            //    items.Add(item.CategoryName);
+            //});
+            //// Dòng này để chứng minh là có thể DI HubContext vào HubContrustor
+            //this.other.Clients.All.SendAsync("ServerReply", "Othrer");
+            account.Balance -= 100;
+            this.context.SaveChanges(); 
+            return this.Clients.Caller.SendAsync("ServerReply", "Đã trừ tiền, tài khoản còn: " + account.Balance);
         }
 
     }

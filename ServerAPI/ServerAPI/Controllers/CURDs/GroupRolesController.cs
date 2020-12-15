@@ -84,7 +84,32 @@ namespace ServerAPI.Controllers.CURDs
             groupRole.Id = null;
             if (this.entityCRUD.Add<GroupRole>(groupRole).Result)
             {
-                return Ok(groupRole.Id);
+                // Sau khi thêm mới, ghi vào bảng RoleActive những quyền ứng với frontend Id 
+                var listFrontEndRole = this.entityCRUD.GetAll<FrontendRole>().ToList();
+                var listNewRoleActive = new List<RoleActive>();
+                listFrontEndRole.ForEach(item =>
+                {
+                    listNewRoleActive.Add(new RoleActive
+                    {
+                        FrontendRoleId = item.Id,
+                        GroupRoleId = groupRole.Id.Value,
+                        IsCreate = false,
+                        IsDelete = false,
+                        IsPut = false,
+                        IsView = false
+                    });
+                });
+                if (this.entityCRUD.AddRange<RoleActive>(listNewRoleActive).Result)
+                {
+                    return Ok(groupRole.Id);
+                }
+                else
+                {
+                    return BadRequest(new ErrorModel
+                    {
+                        Messege = "Không thể thiêt lập nhóm quyền mới"
+                    });
+                }
             }
             else
             {
@@ -121,17 +146,31 @@ namespace ServerAPI.Controllers.CURDs
                     Messege = "Nhóm quyền này vẫn đang còn user"
                 });
             }
-            if (this.entityCRUD.Delete<GroupRole>(groupRoleFound).Result)
+            // Xóa những roleActive liên quan đến nhóm quyền 
+            var listRoleActive = this.entityCRUD.GetAll<RoleActive>(x => x.GroupRoleId == id).ToList();
+            if (this.entityCRUD.DeleteRange<RoleActive>(listRoleActive).Result)
             {
-                return Ok(true);
+                if (this.entityCRUD.Delete<GroupRole>(groupRoleFound).Result)
+                {
+                    return Ok(id);
+                }
+                else
+                {
+                    return BadRequest(new ErrorModel
+                    {
+                        Messege = "Có lỗi xảy ra vui lòng thử lại sau"
+                    });
+                }
             }
-            else
-            {
+            else {
                 return BadRequest(new ErrorModel
                 {
                     Messege = "Có lỗi xảy ra vui lòng thử lại sau"
                 });
-            }
+            };
+
+
+           
         }
 
         private bool GroupRoleExists(int id)

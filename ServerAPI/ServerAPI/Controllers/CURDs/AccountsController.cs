@@ -72,6 +72,7 @@ namespace ServerAPI.Controllers.CURDs
         // Sửa tài khoản
         // Không cho sửa mật khẩu.
         // Không cho đổi tên.
+        // Không cho đổi trạng thái đăng nhập.
         [HttpPut("{id}")]
         public IActionResult PutAccount(int? id,[FromBody] Account account)
         {
@@ -89,6 +90,7 @@ namespace ServerAPI.Controllers.CURDs
                 account.Id = id;
                 account.AccountName = accountFound.AccountName;
                 account.Password = accountFound.Password;
+                account.IsLogged = accountFound.IsLogged;
                 if (this.entityCRUD.Update<Account, Account>(account, accountFound).Result)
                 {
                     return Ok(true);
@@ -105,7 +107,7 @@ namespace ServerAPI.Controllers.CURDs
         
         // Đổi mật khẩu tài khoản. 
         [HttpPut]
-        [Route("changpass/{id}")]
+        [Route("changepass/{id}")]
         public IActionResult changePassword(int id, PasswordModel password)
         {
             var accountFound = this.entityCRUD.GetAll<Account>(x => x.Id == id).FirstOrDefault(); 
@@ -198,6 +200,23 @@ namespace ServerAPI.Controllers.CURDs
                 }
 
 
+            }
+        }
+
+        // Test APi nạp tiền
+        [HttpPut]
+        [Route("balance")]
+        public IActionResult addBalance()
+        {
+            var acc= this.entityCRUD.GetAll<Account>(x => x.AccountName == "first_user").FirstOrDefault();
+            acc.Balance += 9999;
+            if(this.entityCRUD.Update<Account, Account>(acc, acc).Result)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest(); 
             }
         }
 

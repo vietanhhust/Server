@@ -9,6 +9,7 @@ using ServerAPI.Model.Database;
 using ServerAPI.Model.Errors;
 using ServerAPI.Model.StaticModel;
 
+// Phần này cần phải viêt lại, cho phần syncToolController
 namespace ServerAPI.Controllers.CURDs
 {
     [Route("api/[controller]")]
@@ -23,7 +24,7 @@ namespace ServerAPI.Controllers.CURDs
             this.context = context;
         }
 
-        // Lấy list các quyền về
+        // Lấy list các nhóm quyền về
         [HttpGet]
         public IActionResult GetRoles()
         {
