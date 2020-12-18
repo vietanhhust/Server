@@ -187,10 +187,24 @@ namespace ServerAPI.Controllers.Services
             });
             return Ok(StaticConsts.ConnectedClient.Count);
         }
+
+
+        // APi này dùng để ping client với server, vài phút 1 lần, để kiểm tra xem có bị mất kết nối không.
+        [IgnoreFilterAtrribute]
+        [Route("ping")]
+        [HttpGet]
+        public IActionResult ClientPing()
+        {
+            return Ok(true);
+        }
     }
 
 
     
     
+
+
+
+
 
 }

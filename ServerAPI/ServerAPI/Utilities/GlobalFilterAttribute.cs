@@ -28,6 +28,7 @@ namespace ServerAPI.Utilities
         // Nếu muốn bỏ qua cái này, dùng custom Attribute [IgnorFilter....]
         public override void OnActionExecuting(ActionExecutingContext context)
         {
+            Console.WriteLine(context.ActionDescriptor.AttributeRouteInfo.Template);
             //var controllerMetaData = (ControllerActionDescriptor)context.ActionDescriptor;
             //if (controllerMetaData.MethodInfo.CustomAttributes.
             //    Any(x => x.AttributeType == typeof(IgnoreFilterAtrribute)))

@@ -156,4 +156,3 @@ D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\zh-H
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.csproj.CoreCompileInputs.cache
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.MvcApplicationPartsAssemblyInfo.cache
-D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.csprojAssemblyReference.cache

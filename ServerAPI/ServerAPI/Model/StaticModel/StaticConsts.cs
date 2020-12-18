@@ -69,6 +69,7 @@ namespace ServerAPI.Model.StaticModel
     {
         public string ConnectionId { get; set; }
         public int ClientId { get; set; }
+        public Account Account { get; set; }
     }
 
     // Đại diện cho 1 admin page đang connect

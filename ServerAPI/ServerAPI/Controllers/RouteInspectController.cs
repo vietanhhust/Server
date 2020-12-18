@@ -29,7 +29,7 @@ namespace ServerAPI.Controllers
         [Route("all")]
         public IActionResult getAllRouter()
         {
-            Console.WriteLine(this.HttpContext.Connection.RemoteIpAddress);
+            Console.WriteLine(this.HttpContext.Connection.RemoteIpAddress.ToString() + this.HttpContext.Connection.RemotePort.ToString()); 
             var a = this.inspector.ActionDescriptors.Items.ToList();
             if(a is null)
             {

@@ -57,6 +57,7 @@ namespace ServerAPI.Model.Hubs
             Console.WriteLine("DisCon-Máy: " + this.CLientId);
             var connected = StaticConsts.ConnectedClient.Where(x => x.ConnectionId == this.Context.ConnectionId).FirstOrDefault();
             connected.ConnectionId = "";
+            connected.Account = null;
             return base.OnDisconnectedAsync(exception);
         }
 

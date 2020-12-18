@@ -41,15 +41,25 @@ namespace ServerAPI
 
                 try
                 {
+                    // Khởi tạo list client
                     var entityCRUD = services.GetRequiredService<EntityCRUDService>();
                     entityCRUD.GetAll<Client>().OrderByDescending(x => x.ClientId).ToList().ForEach(item =>
                       {
                           StaticConsts.ConnectedClient.Add(new ClientConnect
                           {
                               ClientId = item.ClientId,
-                              ConnectionId = ""
+                              ConnectionId = "", 
+                              Account = null
                           });
                       });
+
+                    // Reset tất cả tài khoản, Account.isLogged = false
+                    var accounts = entityCRUD.GetAll<Account>().ToList();
+                    accounts.ForEach(item => item.IsLogged = false);
+                    if (entityCRUD.UpdateRange<Account>(accounts).Result)
+                    {
+                        Console.WriteLine("reset tài khoản thành công");
+                    }
                 }
                 catch (Exception ex)
                 {

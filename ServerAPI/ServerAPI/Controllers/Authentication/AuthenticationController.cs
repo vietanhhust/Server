@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using ServerAPI.Controllers.CURDs;
 using ServerAPI.Controllers.Services;
 using ServerAPI.Model.Database;
@@ -92,10 +93,15 @@ namespace ServerAPI.Controllers.Authentication
 
 
         //Authentication cho tài khoản người chơi. 
+        // Khi đăng nhập thành công thì cho người chơi vào list ClientCOnnected.
+        // Id ở đây là clientId
         [HttpPost]
-        [Route("account")]
-        public IActionResult customerAuthentication([FromBody] LoginModel model)
+        [Route("account/{clientId}")]
+        public IActionResult customerAuthentication(int clientId, [FromBody] LoginModel model)
         {
+
+            var clientFound = this.entityCRUD.GetAll<Client>(x => x.ClientId == clientId).FirstOrDefault();
+            var groupClientFound = this.entityCRUD.GetAll<GroupClient>(x => x.Id == clientFound.ClientGroupId).FirstOrDefault(); 
             if(model.UserName is null || model.Password is null)
             {
                 return BadRequest(new ErrorModel
@@ -118,7 +124,8 @@ namespace ServerAPI.Controllers.Authentication
             else
             {
                 // Check so tien con lai trong tai khoan
-                if (accoundFound.Balance < 150)
+                var time = (float)accoundFound.Balance / (float)groupClientFound.Price * (float)60;
+                if (time < 1.5)
                 {
                     return BadRequest(new ErrorModel
                     {
@@ -138,6 +145,8 @@ namespace ServerAPI.Controllers.Authentication
                 accoundFound.IsLogged = true; 
                 if(this.entityCRUD.Update<Account, Account>(accoundFound, accoundFound).Result)
                 {
+                    StaticConsts.ConnectedClient.Where(item => item.ClientId == clientId).FirstOrDefault().Account = accoundFound;
+                    Console.WriteLine(JsonConvert.SerializeObject(StaticConsts.ConnectedClient));
                     return Ok(accoundFound);
                 }
                 else
@@ -151,8 +160,8 @@ namespace ServerAPI.Controllers.Authentication
         }
 
         [HttpPost]
-        [Route("account/logout")]
-        public IActionResult logoutAccount([FromBody] LoginModel model)
+        [Route("account/logout/{clientId}")]
+        public IActionResult logoutAccount(int clientId, [FromBody] LoginModel model)
         {
             var accountFound = this.entityCRUD.GetAll<Account>(x => x.AccountName.ToLower() == model.UserName.ToLower()).FirstOrDefault(); 
             if(accountFound is null)
@@ -164,10 +173,19 @@ namespace ServerAPI.Controllers.Authentication
             }
             else
             {
+                // Validate để k bị lợi dụng api tắt máy người khác
+                if(StaticConsts.ConnectedClient.
+                    Where(item=>item.ClientId==clientId).
+                        FirstOrDefault().Account?.AccountName != accountFound.AccountName)
+                {
+                    return BadRequest(new ErrorModel() { Messege = "Logout tài khoản không đúng" });
+                }
+
                 accountFound.IsLogged = false; 
                 if(this.entityCRUD.Update<Account, Account>(accountFound, accountFound).Result)
                 {
-                    return Ok(true);
+                    StaticConsts.ConnectedClient.Where(item => item.ClientId == clientId).FirstOrDefault().Account = null; 
+                    return Ok(StaticConsts.ConnectedClient);
                 }
                 else
                 {
@@ -177,6 +195,13 @@ namespace ServerAPI.Controllers.Authentication
                     });
                 }
             }
+        }
+
+        [HttpGet]
+        [Route("ping")]
+        public IActionResult Test()
+        {
+           return Ok(JsonConvert.SerializeObject(StaticConsts.ConnectedClient));
         }
     }
 }
