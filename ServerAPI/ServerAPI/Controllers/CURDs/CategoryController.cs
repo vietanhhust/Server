@@ -38,7 +38,8 @@ namespace ServerAPI.Controllers
                 Select(cate => new
                 {
                     cate.Id,
-                    cate.CategoryName
+                    cate.CategoryName, 
+                    cate.Description
                 }).ToList());
         }
 
