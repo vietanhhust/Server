@@ -78,6 +78,12 @@ namespace ServerAPI.Model.StaticModel
         public string ConnectionId { get; set; }
     }
 
+    public class BalanceModel
+    {
+        public int Money { get; set;}
+        public int AccountId { get; set; }
+    }
+
     public class KickStart
     {
         public KickStart(ClientManagerContext context)

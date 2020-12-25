@@ -24,7 +24,7 @@ namespace ServerAPI.Model.Hubs
         public override async Task OnConnectedAsync()
         {
             Console.WriteLine("Connect from: {0}", this.Context.ConnectionId);
-            Console.WriteLine(this.Context.GetHttpContext().Request.Headers[""]);
+            //Console.WriteLine(this.Context.GetHttpContext().Request.Headers[""]);
             this.Context.GetHttpContext().Request.Headers.ToList().ForEach(item =>
             {
                 Console.WriteLine(item.Key + " : " + item.Value);

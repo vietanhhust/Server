@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ServerAPI.Model.StaticModel;
+using Newtonsoft.Json;
 
 namespace ServerAPI.Model.Hubs
 {
@@ -17,10 +18,6 @@ namespace ServerAPI.Model.Hubs
         private int CLientId = 0;
         private int UserId = 0;
 
-        // Các biến tài khoản, CLient được tìm thấy 
-        private Client client;
-        private ClientConnect connected;
-        private Account account;
 
         // Lấy hubs để giao tiếp với các pageAdmin
         IHubContext<AdminPageHub> adminHubs;
@@ -34,30 +31,50 @@ namespace ServerAPI.Model.Hubs
         {
             
             // Lấy id tài khoản và id máy đang sử dụng  (id máy là số máy, k phải identity)
-            this.CLientId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]);
-            this.UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
+            var CLientId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]);
+            var UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
+            Console.WriteLine("User " + UserId + "Client " + CLientId);
 
             // Đổi trạng thái của ListClient connected
-            this.connected = StaticConsts.ConnectedClient.Where(x => x.ClientId == this.CLientId).FirstOrDefault();
+            var connected = StaticConsts.ConnectedClient.Where(x => x.ClientId == CLientId).FirstOrDefault();
             connected.ConnectionId = this.Context.ConnectionId;
 
-            this.account = this.entityCRUD.GetAll<Account>(x => x.Id == this.CLientId).FirstOrDefault();
-            this.client = this.entityCRUD.GetAll<Client>(x => x.ClientId == this.CLientId).FirstOrDefault();
+             
+            connected.Account = this.entityCRUD.GetAll<Account>(x => x.Id == UserId).FirstOrDefault();
+           
+            var client = this.entityCRUD.GetAll<Client>(x => x.ClientId == CLientId).FirstOrDefault();
             StaticConsts.ConnectedClient.ForEach(item =>
             {
                 Console.WriteLine("Clien-Id: " + item.ClientId + ", ConnectedId: " + item.ConnectionId);
             });
-            Console.WriteLine("Máy: " + this.CLientId);
+            Console.WriteLine("Máy: " + CLientId);
             return base.OnConnectedAsync();
         }
 
         // Chỉnh lại trạng thái của static list ClientConnected
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            Console.WriteLine("DisCon-Máy: " + this.CLientId);
-            var connected = StaticConsts.ConnectedClient.Where(x => x.ConnectionId == this.Context.ConnectionId).FirstOrDefault();
-            connected.ConnectionId = "";
-            connected.Account = null;
+            var CLientId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]);
+            var UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
+            var connectedFound = StaticConsts.ConnectedClient.Where(x => x.ClientId== CLientId).FirstOrDefault();
+            connectedFound.ConnectionId = "";
+
+            if(connectedFound.Account is null)
+            {
+
+            }
+            else
+            {
+                var accountFound = this.entityCRUD.GetAll<Account>(x => x.Id == connectedFound.Account.Id.Value).FirstOrDefault();
+                accountFound.IsLogged = false; 
+                var result = this.entityCRUD.Update<Account, Account>(accountFound, accountFound).Result;
+                if(this.entityCRUD is null)
+                {
+                    Console.WriteLine("khong co service");
+                }
+                connectedFound.Account = null;
+            }
+            
             return base.OnDisconnectedAsync(exception);
         }
 
@@ -67,18 +84,20 @@ namespace ServerAPI.Model.Hubs
         [HubMethodName("bill")]
         public void cost()
         {
+            // Đoạn này cần xem xét về kiểu int và float
             // Lấy nhóm máy ---> giá. 
             var client = this.entityCRUD.GetAll<Client>(x => 
                 x.ClientId == Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"])).
                 FirstOrDefault();
+
+            var UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
             var clientGroup = this.entityCRUD.GetAll<GroupClient>(x => x.Id == client.ClientGroupId).
                 FirstOrDefault();
             int cost = clientGroup.Price / 20;
 
-            var account = this.entityCRUD.GetAll<Account>(x => x.Id == this.UserId).FirstOrDefault();
+            var account = this.entityCRUD.GetAll<Account>(x => x.Id == UserId).FirstOrDefault();
             account.Balance -= cost;
             var updateResult = this.entityCRUD.Update<Account, Account>(account, account).Result;
-
 
             // Khi trừ tiền, thì phát ra cho trang admin biết. Dùng IHubContext, đoạn này viết sau.
         }

@@ -79,7 +79,6 @@ namespace ServerAPI.Controllers.Services
                 return await Task<IActionResult>.Factory.StartNew(() => Ok(true));
             }
             else { return await Task<IActionResult>.Factory.StartNew(() => BadRequest(false)); }
-
         }
         
         //Hàm này để lấy ra tât cả các endpoint của Application;
@@ -163,7 +162,8 @@ namespace ServerAPI.Controllers.Services
                 return BadRequest(new ErrorModel
                 {
                     Messege = "Có lỗi xảy ra vui lòng thử lại"
-                }); }
+                }); 
+            }
         }
 
         // Máy chủ sẽ có 1 biến global static, chứa danh sách các client ( dù có tham gia kết nối hay không)

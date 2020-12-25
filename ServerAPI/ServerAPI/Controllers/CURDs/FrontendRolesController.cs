@@ -116,7 +116,8 @@ namespace ServerAPI.Controllers.CURDs
                         IsCreate = true,
                         IsPut = true,
                         IsDelete = true,
-                        IsView = true
+                        IsView = true, 
+                        isActive = true
                     }).Result;
                     if (result)
                     {
@@ -133,8 +134,9 @@ namespace ServerAPI.Controllers.CURDs
                                 IsCreate = false,
                                 IsDelete = false,
                                 IsPut = false,
-                                IsView = false
-                            });
+                                IsView = false,
+                                isActive = false
+                            }); ;
                         });
                         if (this.entityCRUD.AddRange<RoleActive>(newRoleActive).Result)
                         {

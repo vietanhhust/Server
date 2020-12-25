@@ -4,10 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using ServerAPI.Controllers.Services;
 using ServerAPI.Model.Database;
 using ServerAPI.Model.Errors;
+using ServerAPI.Model.Hubs;
+using ServerAPI.Model.StaticModel;
 
 namespace ServerAPI.Controllers.CURDs
 {
@@ -18,12 +21,14 @@ namespace ServerAPI.Controllers.CURDs
         private readonly ClientManagerContext context;
         private EntityCRUDService entityCRUD;
         private PasswordService passwordService;
-        public AccountsController(ClientManagerContext context, EntityCRUDService entityCRUD, 
-            PasswordService passwordService)
+        private IHubContext<ClientHub> hubContext;
+        public AccountsController(ClientManagerContext context, EntityCRUDService entityCRUD,
+            PasswordService passwordService, IHubContext<ClientHub> hubContext)
         {
             this.entityCRUD = entityCRUD;
             this.passwordService = passwordService;
             this.context = context;
+            this.hubContext = hubContext; 
         }
 
         // Lấy ra account
@@ -206,10 +211,14 @@ namespace ServerAPI.Controllers.CURDs
         // Test APi nạp tiền
         [HttpPut]
         [Route("balance")]
-        public IActionResult addBalance()
+        public IActionResult addBalance([FromBody] BalanceModel model)
         {
-            var acc= this.entityCRUD.GetAll<Account>(x => x.AccountName == "first_user").FirstOrDefault();
-            acc.Balance += 9999;
+            var acc= this.entityCRUD.GetAll<Account>(x => x.Id==model.AccountId).FirstOrDefault();
+            if(acc is null)
+            {
+                return BadRequest(new ErrorModel() {Messege = "Tài khoản không đúng" });
+            }
+            acc.Balance += model.Money;
             if(this.entityCRUD.Update<Account, Account>(acc, acc).Result)
             {
                 return Ok();
@@ -218,6 +227,9 @@ namespace ServerAPI.Controllers.CURDs
             {
                 return BadRequest(); 
             }
+            // Hub context bắn về 
+            
+
         }
 
         private bool AccountExists(int? id)

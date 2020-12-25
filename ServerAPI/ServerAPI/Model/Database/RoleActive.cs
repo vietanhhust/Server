@@ -14,6 +14,7 @@ namespace ServerAPI.Model.Database
         public bool? IsCreate { get; set; }
         public bool? IsPut { get; set; }
         public bool? IsDelete { get; set; }
+        public bool? isActive { get; set; }
 
         public virtual FrontendRole FrontendCodeNavigation { get; set; }
         public virtual GroupRole GroupRole { get; set; }

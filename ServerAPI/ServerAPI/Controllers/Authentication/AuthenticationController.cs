@@ -76,10 +76,18 @@ namespace ServerAPI.Controllers.Authentication
                 var token = tokenHandler.WriteToken(securityToken);
                 var activeRoles = this.entityCRUD.
                     GetAll<RoleActive>(x => x.GroupRoleId == accountFound.GroupRoleId).
-                    ToList().Select(x=>new { 
-                        x.Id,
-                        x.IsView, x.IsCreate, x.IsPut, x.IsDelete, 
-                        frontendCode = this.entityCRUD.GetAll<FrontendRole>(role=>role.Id==x.FrontendRoleId).FirstOrDefault().FrontendCode
+                    ToList().Select(x=> {
+                        var frontendRoleFound = this.entityCRUD.GetAll<FrontendRole>(role => role.Id == x.FrontendRoleId).FirstOrDefault();
+                        return new
+                        {
+                            x.Id,
+                            //x.IsView, x.IsCreate, x.IsPut, x.IsDelete, 
+                            x.isActive,
+                            x.GroupRoleId,
+                            frontendCode = frontendRoleFound.FrontendCode, 
+                            description = frontendRoleFound.Description, 
+                            frontendRoleId = frontendRoleFound.Id
+                        };
                     });
                 return Ok(new
                 {

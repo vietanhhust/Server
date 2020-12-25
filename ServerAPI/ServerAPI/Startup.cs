@@ -43,6 +43,9 @@ namespace ServerAPI
                 options.UseSqlServer(this.Configuration.GetConnectionString("ClientManagerDatabase"))
             );
 
+            // CorsPolicy
+            services.AddCors();
+
             // Controller 
             services.AddControllers(option => {
                 option.EnableEndpointRouting = false;
@@ -89,6 +92,9 @@ namespace ServerAPI
                     ClockSkew = TimeSpan.Zero, 
                 };
             });
+
+           
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -99,14 +105,19 @@ namespace ServerAPI
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseCors(option =>
-            {
-                option.AllowAnyOrigin();
-            });
 
             app.UseRouting();
+
+            app.UseCors(builder =>
+            builder
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowAnyOrigin()
+            );
+
             app.UseAuthentication(); 
             app.UseAuthorization();
+
 
             app.UseEndpoints(endpoints =>
             {
@@ -117,7 +128,7 @@ namespace ServerAPI
                 endpoints.MapHub<ClientHub>("/client");
             });
 
-            app.UseStaticFiles();
+            app.UseStaticFiles(); 
         }
     }
 }
