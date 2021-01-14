@@ -154,6 +154,9 @@ D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\tr\M
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.csprojAssemblyReference.cache
+D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.JsonPatch.dll
+D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\Microsoft.AspNetCore.Mvc.NewtonsoftJson.dll
+D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\bin\Debug\netcoreapp3.1\Newtonsoft.Json.Bson.dll
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.csproj.CoreCompileInputs.cache
 D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.MvcApplicationPartsAssemblyInfo.cache
-D:\20201\Đồ 3\Project\Server\ServerAPI\ServerAPI\obj\Debug\netcoreapp3.1\ServerAPI.csprojAssemblyReference.cache

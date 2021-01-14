@@ -82,7 +82,7 @@ namespace ServerAPI.Controllers.Authentication
                         {
                             x.Id,
                             //x.IsView, x.IsCreate, x.IsPut, x.IsDelete, 
-                            x.isActive,
+                            x.IsActive,
                             x.GroupRoleId,
                             frontendCode = frontendRoleFound.FrontendCode, 
                             description = frontendRoleFound.Description, 
@@ -133,7 +133,7 @@ namespace ServerAPI.Controllers.Authentication
             {
                 // Check so tien con lai trong tai khoan
                 var time = (float)accoundFound.Balance / (float)groupClientFound.Price * (float)60;
-                if (time < 1.5)
+                if (time <= 2)
                 {
                     return BadRequest(new ErrorModel
                     {

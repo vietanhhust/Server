@@ -7,6 +7,12 @@ namespace ServerAPI.Model.Database
 {
     public partial class Account
     {
+        public Account()
+        {
+            HistoryChangeBalances = new HashSet<HistoryChangeBalance>();
+            Orders = new HashSet<Order>();
+        }
+
         public int? Id { get; set; }
         public string AccountName { get; set; }
         public string Password { get; set; }
@@ -21,5 +27,8 @@ namespace ServerAPI.Model.Database
         public int? ElaspedTime { get; set; }
         public bool? IsActived { get; set; }
         public bool? IsLogged { get; set; }
+
+        public virtual ICollection<HistoryChangeBalance> HistoryChangeBalances { get; set; }
+        public virtual ICollection<Order> Orders { get; set; }
     }
 }

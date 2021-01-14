@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using ServerAPI.Model.Database;
 using ServerAPI.Model.Errors;
 using Microsoft.EntityFrameworkCore;
+using ServerAPI.Model.StaticModel;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -51,22 +52,37 @@ namespace ServerAPI.Controllers.CURDs
 
         // Lấy về list client theo nhóm máy
         [HttpGet]
-        [Route("/group/{id}/clients")]
+        [Route("group/{id}/clients")]
         public IActionResult getClientOfGroup(int? id)
         {
-            var group = this.context.GroupClients.FirstOrDefault(x => x.Id == id); 
+            var group = this.entityCRUD.GetAll<GroupClient>(x => x.Id == id).FirstOrDefault(); 
             if(group is null)
             {
                 return BadRequest(new ErrorModel
                 {
-                    Messege = "Không tìm thấy group chỉ định",
+                    Messege = "Không tìm thấy nhóm máy chỉ định",
                     Status = 400
                 });
             }
             else
             {
-                return Ok(this.entityCRUD.GetAll<Client>().Where(client => client.ClientGroupId == group.Id));
+                var lstClient = this.entityCRUD.GetAll<Client>().Where(client => client.ClientGroupId == group.Id);
+                var returnClient = lstClient.Select(x => new {
+                    x.Id, 
+                    x.ClientGroupId, 
+                    x.ClientId, 
+                    x.Description
+                });
+                return Ok(returnClient);
             }
+        }
+
+        // Lấy trạng thái của Các Client connected. (StaticConst.ClientConnected) 
+        [HttpGet]
+        [Route("status")]
+        public IActionResult getStatusClientConnected()
+        {
+            return Ok(StaticConsts.ConnectedClient.ToList().OrderByDescending(item=> item.ClientId));
         }
 
         // Sửa thông tin client, nhưng ở đây không cho phép sửa trường CLientId; 

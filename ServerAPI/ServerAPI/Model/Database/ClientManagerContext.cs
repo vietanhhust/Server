@@ -21,16 +21,19 @@ namespace ServerAPI.Model.Database
         public virtual DbSet<FrontendRole> FrontendRoles { get; set; }
         public virtual DbSet<GroupClient> GroupClients { get; set; }
         public virtual DbSet<GroupRole> GroupRoles { get; set; }
+        public virtual DbSet<HistoryChangeBalance> HistoryChangeBalances { get; set; }
         public virtual DbSet<ManagingAccount> ManagingAccounts { get; set; }
+        public virtual DbSet<Order> Orders { get; set; }
+        public virtual DbSet<OrderDetail> OrderDetails { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<RoleActive> RoleActives { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            //if (!optionsBuilder.IsConfigured)
-            //{
-            //    optionsBuilder.UseSqlServer("Server=.\\SQLExpress;Database=ClientManager;Trusted_Connection=True;");
-            //}
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=.\\SQLExpress;Database=ClientManager;Trusted_Connection=True;");
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -92,11 +95,10 @@ namespace ServerAPI.Model.Database
 
                 entity.Property(e => e.IsNew).HasDefaultValueSql("((1))");
 
-                entity.HasOne(d => d.ClientNavigation)
+                entity.HasOne(d => d.ClientGroup)
                     .WithMany(p => p.Clients)
-                    .HasForeignKey(d => d.ClientId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Client_GroupClient");
+                    .HasForeignKey(d => d.ClientGroupId)
+                    .HasConstraintName("FK_Client_GroupClient1");
             });
 
             modelBuilder.Entity<FrontendRole>(entity =>
@@ -120,6 +122,25 @@ namespace ServerAPI.Model.Database
                     .HasMaxLength(50);
             });
 
+            modelBuilder.Entity<HistoryChangeBalance>(entity =>
+            {
+                entity.ToTable("HistoryChangeBalance");
+
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
+                entity.HasOne(d => d.Account)
+                    .WithMany(p => p.HistoryChangeBalances)
+                    .HasForeignKey(d => d.AccountId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HistoryChangeBalance_Account");
+
+                entity.HasOne(d => d.ManagingAccount)
+                    .WithMany(p => p.HistoryChangeBalances)
+                    .HasForeignKey(d => d.ManagingAccountId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HistoryChangeBalance_ManagingAccount");
+            });
+
             modelBuilder.Entity<ManagingAccount>(entity =>
             {
                 entity.ToTable("ManagingAccount");
@@ -137,6 +158,40 @@ namespace ServerAPI.Model.Database
                     .HasConstraintName("FK_ManagingAccount_GroupRole");
             });
 
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.ToTable("Order");
+
+                entity.HasOne(d => d.Account)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.AccountId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Order_Account");
+
+                entity.HasOne(d => d.Admin)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.AdminId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Order_ManagingAccount");
+            });
+
+            modelBuilder.Entity<OrderDetail>(entity =>
+            {
+                entity.ToTable("OrderDetail");
+
+                entity.HasOne(d => d.CategoryItem)
+                    .WithMany(p => p.OrderDetails)
+                    .HasForeignKey(d => d.CategoryItemId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OrderDetail_CategoryItem");
+
+                entity.HasOne(d => d.Order)
+                    .WithMany(p => p.OrderDetails)
+                    .HasForeignKey(d => d.OrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OrderDetail_Order");
+            });
+
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.ToTable("Role");
@@ -147,13 +202,16 @@ namespace ServerAPI.Model.Database
                     .IsRequired()
                     .HasMaxLength(10);
 
-
                 entity.Property(e => e.Template).IsRequired();
             });
 
             modelBuilder.Entity<RoleActive>(entity =>
             {
                 entity.ToTable("RoleActive");
+
+                entity.Property(e => e.IsActive)
+                    .HasColumnName("isActive")
+                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.IsCreate).HasColumnName("isCreate");
 
@@ -163,10 +221,9 @@ namespace ServerAPI.Model.Database
 
                 entity.Property(e => e.IsView).HasColumnName("isView");
 
-                entity.HasOne(d => d.FrontendCodeNavigation)
+                entity.HasOne(d => d.FrontendRole)
                     .WithMany(p => p.RoleActives)
                     .HasForeignKey(d => d.FrontendRoleId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_RoleActive_FrontendRole");
 
                 entity.HasOne(d => d.GroupRole)

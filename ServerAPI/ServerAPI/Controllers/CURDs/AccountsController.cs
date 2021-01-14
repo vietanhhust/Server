@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using ServerAPI.Controllers.Services;
 using ServerAPI.Model.Database;
 using ServerAPI.Model.Errors;
@@ -64,12 +65,12 @@ namespace ServerAPI.Controllers.CURDs
         {
             if(keyword is null)
             {
-                return Ok(this.entityCRUD.GetAll<Account>().ToList());
+                return Ok(this.entityCRUD.GetAll<Account>(x=>x.IsActived == true).ToList());
             }
             else
             {
                 return Ok(this.entityCRUD.GetAll<Account>(x =>
-                    x.AccountName.ToLower().Contains(keyword.ToLower())));
+                    x.AccountName.ToLower().Contains(keyword.ToLower()) && x.IsActived == true));
             }
         }
 
@@ -159,7 +160,9 @@ namespace ServerAPI.Controllers.CURDs
                     Messege = "Tài khoản đã tồn tại"
                 });
             }
-           
+
+            account.Debit = 0;
+            account.ElaspedTime = 0; 
             account.AccountName = account.AccountName.ToLower(); 
             account.IsLogged = false;
             account.IsActived = true;
@@ -191,6 +194,13 @@ namespace ServerAPI.Controllers.CURDs
             }
             else
             {
+                if (accountFound.IsLogged.Value)
+                {
+                    return BadRequest(new ErrorModel()
+                    {
+                        Messege = "Không được xóa tài khoản đang hoạt động"
+                    });
+                }
                 accountFound.IsActived = false;
                 if(this.entityCRUD.Update<Account, Account>(accountFound, accountFound).Result)
                 {
@@ -213,23 +223,128 @@ namespace ServerAPI.Controllers.CURDs
         [Route("balance")]
         public IActionResult addBalance([FromBody] BalanceModel model)
         {
+            if(model.Money < 0)
+            {
+                return BadRequest(new ErrorModel()
+                {
+                    Messege = "Số tiền không hợp lệ"
+                });
+            }
             var acc= this.entityCRUD.GetAll<Account>(x => x.Id==model.AccountId).FirstOrDefault();
             if(acc is null)
             {
                 return BadRequest(new ErrorModel() {Messege = "Tài khoản không đúng" });
             }
             acc.Balance += model.Money;
+            acc.ElaspedTime += model.Money;
+            Console.WriteLine(acc.ElaspedTime);
+            Console.WriteLine(acc.Balance);
             if(this.entityCRUD.Update<Account, Account>(acc, acc).Result)
             {
+                // Gửi số tiền mới về tài khoản đang kết nối
+                // Đoạn này đang hardcode, 
+                //nếu mà trong đám client connect tài khoản đang đăng nhập thì lấy ra gửi tiền mới
+                ClientConnect clientConnected = null;
+                StaticConsts.ConnectedClient.ForEach(item =>
+                {
+                    if (item.Account is null)
+                    {
+
+                    }
+                    else
+                    {
+                        if (item.Account.Id == model.AccountId) {
+                            clientConnected = item;
+                        }
+                    }
+                });
+
+                if(clientConnected is null)
+                {
+
+                }
+                else
+                {
+                    this.hubContext.Clients.
+                        Client(clientConnected.ConnectionId).
+                            SendAsync("balanceChange", (float)acc.Balance);
+                }
+
                 return Ok();
             }
             else
             {
                 return BadRequest(); 
             }
-            // Hub context bắn về 
-            
+        }
 
+
+        [HttpPut]
+        [Route("refund")]
+        public IActionResult refundBalance([FromBody] BalanceModel model)
+        {
+            if(model.Money < 0)
+            {
+                return BadRequest(new ErrorModel()
+                {
+                    Messege = "Số tiền không hợp lệ"
+                });
+            }
+            var accountFound = this.entityCRUD.GetAll<Account>(x => x.Id == model.AccountId).FirstOrDefault(); 
+            if(accountFound is null)
+            {
+                return BadRequest(new ErrorModel()
+                {
+                    Messege = "Tài khoản không tồn tại"
+                });
+            }
+            if(accountFound.Balance < model.Money)
+            {
+                return BadRequest(new ErrorModel()
+                {
+                    Messege = "Số tiền không được lớn hơn số dư của tài khoản"
+                });
+            }
+            accountFound.Balance -= model.Money;
+            accountFound.ElaspedTime -= model.Money;
+            if(this.entityCRUD.Update<Account, Account>(accountFound, accountFound).Result)
+            {
+                ClientConnect clientConnected = null;
+                StaticConsts.ConnectedClient.ForEach(item =>
+                {
+                    if (item.Account is null)
+                    {
+
+                    }
+                    else
+                    {
+                        if (item.Account.Id == model.AccountId)
+                        {
+                            clientConnected = item;
+                        }
+                    }
+                });
+
+                if (clientConnected is null)
+                {
+
+                }
+                else
+                {
+                    this.hubContext.Clients.
+                        Client(clientConnected.ConnectionId).
+                            SendAsync("balanceChange", (float)accountFound.Balance);
+                }
+
+                return Ok();
+            }
+            else
+            {
+                return BadRequest(new ErrorModel()
+                {
+                    Messege = "Có lỗi xảy ra vui lòng thử lại sau"
+                });
+            }
         }
 
         private bool AccountExists(int? id)

@@ -112,12 +112,12 @@ namespace ServerAPI.Controllers.CURDs
                     {
                         Id = null,
                         GroupRoleId = 2,
-                        FrontendRoleId = frontendRole.Id,
+                        FrontendRoleId = frontendRole.Id.Value,
                         IsCreate = true,
                         IsPut = true,
                         IsDelete = true,
                         IsView = true, 
-                        isActive = true
+                        IsActive = true
                     }).Result;
                     if (result)
                     {
@@ -135,7 +135,7 @@ namespace ServerAPI.Controllers.CURDs
                                 IsDelete = false,
                                 IsPut = false,
                                 IsView = false,
-                                isActive = false
+                                IsActive = false
                             }); ;
                         });
                         if (this.entityCRUD.AddRange<RoleActive>(newRoleActive).Result)

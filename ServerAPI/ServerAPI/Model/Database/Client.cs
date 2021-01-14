@@ -13,6 +13,6 @@ namespace ServerAPI.Model.Database
         public string Description { get; set; }
         public bool? IsNew { get; set; }
 
-        public virtual GroupClient ClientNavigation { get; set; }
+        public virtual GroupClient ClientGroup { get; set; }
     }
 }

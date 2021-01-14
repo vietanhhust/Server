@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -16,10 +17,19 @@ namespace ServerAPI
 {
     public class Program
     {
+        // Lưu ý 1 console có thể tạo và host được nhiều hơn 2 server.
+        // Vậy có thể làm tăng bảo mật bằng cách, 1 server kết nối với Port A
+        // 1 server show trang quản trị ở port B, A lộ ra còn B giữ, Api của trang quản trị trỏ về B.
         public static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            ClientInitialize(CreateHostBuilder(args).Build()).Run();
+            new Thread(() =>
+            {
+                ClientInitialize(CreateHostBuilder(args).Build()).Run();
+            }).Start();
+            //new Thread(() => { 
+            //    ClientInitialize(CreateHostBuilder2(args).Build()).Run();
+            //}).Start();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -29,6 +39,14 @@ namespace ServerAPI
                     webBuilder.UseStartup<Startup>();
                     webBuilder.UseUrls("http://0.0.0.0:5001");
                 });
+
+        public static IHostBuilder CreateHostBuilder2(string[] args) =>
+           Host.CreateDefaultBuilder(args)
+               .ConfigureWebHostDefaults(webBuilder =>
+               {
+                   webBuilder.UseStartup<Startup>();
+                   webBuilder.UseUrls("http://0.0.0.0:5010");
+               });
 
 
         // Khởi tạo danh sách client từ database

@@ -25,9 +25,17 @@ namespace ServerAPI.Controllers.CURDs
 
         // Lấy danh sách nhóm quyền về
         [HttpGet]
-        public IActionResult GetGroupRoles()
+        public IActionResult GetGroupRoles([FromQuery] string keyword)
         {
-            return Ok(this.entityCRUD.GetAll<GroupRole>().ToList());
+            if(keyword is null)
+            {
+                return Ok(this.entityCRUD.GetAll<GroupRole>().ToList());
+            }
+            else
+            {
+                return Ok(this.entityCRUD.GetAll<GroupRole>(x => 
+                    x.GroupName.ToLower().Contains(keyword.ToLower())));
+            }
         }
 
         // GET: api/GroupRoles/5
@@ -91,12 +99,12 @@ namespace ServerAPI.Controllers.CURDs
                 {
                     listNewRoleActive.Add(new RoleActive
                     {
-                        FrontendRoleId = item.Id,
+                        FrontendRoleId = item.Id.Value,
                         GroupRoleId = groupRole.Id.Value,
                         IsCreate = false,
                         IsDelete = false,
                         IsPut = false,
-                        IsView = false
+                        IsView = false, IsActive = false
                     });
                 });
                 if (this.entityCRUD.AddRange<RoleActive>(listNewRoleActive).Result)

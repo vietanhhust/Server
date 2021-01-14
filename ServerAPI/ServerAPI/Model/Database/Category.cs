@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace ServerAPI.Model.Database
 {
     public partial class Category

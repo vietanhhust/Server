@@ -25,7 +25,6 @@ namespace ServerAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         [Route("all")]
         public IActionResult getAllRouter()
         {

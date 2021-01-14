@@ -22,6 +22,8 @@ using ServerAPI.Model.Mappings;
 using ServerAPI.Controllers.Services;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Net.WebSockets;
+using ServerAPI.Model.StaticModel;
 
 namespace ServerAPI
 {
@@ -47,12 +49,14 @@ namespace ServerAPI
             services.AddCors();
 
             // Controller 
-            services.AddControllers(option => {
+            services.AddControllers(option =>
+            {
                 option.EnableEndpointRouting = false;
                 option.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(
                     (err) => "Trường này không được để trống");
                 option.Filters.Add(typeof(GlobalFilterAttribute));
-            });
+            }).AddNewtonsoftJson();
+
 
             // SignalR
             services.AddSignalR(option=>
@@ -105,26 +109,52 @@ namespace ServerAPI
                 app.UseDeveloperExceptionPage();
             }
 
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Path.ToString().Contains("/ws"))
+                {
+                    if (context.WebSockets.IsWebSocketRequest)
+                    {
+                        using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
+                        {
+                            //await Echo(context, webSocket);
+                            StaticConsts.Socket = webSocket;
+                            Console.WriteLine("có kết nôi");
+                        }
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 400;
+                    }
+                }
+                else
+                {
+                    await next();
+                }
+
+            });
 
             app.UseRouting();
 
-            app.UseCors(builder =>
-            builder
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowAnyOrigin()
-            );
+            
 
             app.UseAuthentication(); 
             app.UseAuthorization();
 
+            app.UseCors(builder =>
+                builder.WithOrigins("http://localhost:4200").
+                AllowCredentials().
+                AllowAnyHeader().AllowAnyMethod()
+            );
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHub<TestHub>("/testhub");
                 endpoints.MapControllers();
                 endpoints.MapHub<OtherHub>("/other");
-                endpoints.MapHub<AdminPageHub>("/adminpage");
+                endpoints.MapHub<AdminPageHub>("/adminpage", option=>
+                {
+                });
                 endpoints.MapHub<ClientHub>("/client");
             });
 

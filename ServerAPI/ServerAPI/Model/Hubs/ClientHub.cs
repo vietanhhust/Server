@@ -93,22 +93,23 @@ namespace ServerAPI.Model.Hubs
             var UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
             var clientGroup = this.entityCRUD.GetAll<GroupClient>(x => x.Id == client.ClientGroupId).
                 FirstOrDefault();
-            int cost = clientGroup.Price / 20;
+            var cost = clientGroup.Price / 60f;
 
             var account = this.entityCRUD.GetAll<Account>(x => x.Id == UserId).FirstOrDefault();
-            account.Balance -= cost;
+            account.Balance -= (int)Math.Round(cost);
+            Console.WriteLine("trừ tiền: {0}", (int)Math.Round(cost));
             var updateResult = this.entityCRUD.Update<Account, Account>(account, account).Result;
-
+            Console.WriteLine(cost);
             // Khi trừ tiền, thì phát ra cho trang admin biết. Dùng IHubContext, đoạn này viết sau.
         }
 
         // Gửi cho server, ở bên hub khác. 
         [HubMethodName("sendToAdmin")]
-        public void chatWithAdmin(string mess)
+        public void chatWithAdmin(string mess, string accountName)
         {
-            Console.WriteLine(mess);
-            Console.WriteLine("Máy: " + Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]));
-            this.adminHubs.Clients.All.SendAsync("fromClient", mess, this.Context.ConnectionId);
+            Console.WriteLine(accountName + " : " + mess);
+            var clientId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]);
+            this.adminHubs.Clients.All.SendAsync("fromClient", mess, accountName, this.Context.ConnectionId, clientId);
         }
 
         // Nhận tin nhắn từ hub bên server

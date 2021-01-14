@@ -14,7 +14,7 @@ namespace ServerAPI.Model.Database
 
         public int? Id { get; set; }
         public string GroupName { get; set; }
-        public string Desciption { get; set; }
+        public string Description { get; set; }
         public int Price { get; set; }
 
         public virtual ICollection<Client> Clients { get; set; }

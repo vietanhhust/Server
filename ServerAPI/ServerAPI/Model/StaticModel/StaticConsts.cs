@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 
 namespace ServerAPI.Model.StaticModel
@@ -31,7 +32,9 @@ namespace ServerAPI.Model.StaticModel
 
         // List này để duy trì các connection, để gửi và nhận thông tin
         static public List<ClientConnect> ConnectedClient = new List<ClientConnect>();
-        static public List<AdminPageConnect> AdminConnected = new List<AdminPageConnect>(); 
+        static public List<AdminPageConnect> AdminConnected = new List<AdminPageConnect>();
+
+        static public WebSocket Socket; 
     }
 
     //Enum Method

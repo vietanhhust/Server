@@ -25,13 +25,18 @@ namespace ServerAPI.Controllers.CURDs
 
         // Lấy tất cả các nhóm về. 
         [HttpGet]
-        public IActionResult getAllGroup()
+        public IActionResult getAllGroup([FromQuery] string keyword)
         {
-            return Ok(this.entityCRUD.GetAll<GroupClient>().Select(m => new
+            if(keyword is null)
+            {
+                keyword = ""; 
+            }
+            return Ok(this.entityCRUD.GetAll<GroupClient>(x=>x.GroupName.ToLower().Contains(keyword.ToLower())).Select(m => new
             {
                 m.Id,
                 m.Price,
-                m.Desciption
+                m.Description, 
+                m.GroupName
             }).ToList());
         }
 
@@ -145,6 +150,33 @@ namespace ServerAPI.Controllers.CURDs
                         Messege = "Vui lòng nhập đầy đủ các trường cần thiết",
                         Status = 400
                     });
+                }
+            }
+        }
+
+        [HttpPut]
+        [Route("changeGroup/{id}")]
+        public IActionResult changeGroupClient(int id, [FromBody] List<Client> clients)
+        {
+            
+            if (clients.Count == 0)
+            {
+                return Ok();
+            }
+            else
+            {
+                var client = this.entityCRUD.GetAll<Client>(x => x.ClientGroupId == clients[0].ClientGroupId).ToList();
+                clients.ForEach(item => {
+                    var clientFound = client.Where(x => x.Id == item.Id).FirstOrDefault();
+                    clientFound.ClientGroupId = id;
+                });
+                if (this.entityCRUD.UpdateRange<Client>(client).Result)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return BadRequest(new ErrorModel() { Messege = "Có lỗi xảy ra" });
                 }
             }
         }
