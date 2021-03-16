@@ -126,7 +126,7 @@ namespace ServerAPI.Model.Database
             {
                 entity.ToTable("HistoryChangeBalance");
 
-                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Account)
                     .WithMany(p => p.HistoryChangeBalances)

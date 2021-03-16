@@ -36,6 +36,17 @@ namespace ServerAPI.Controllers.CURDs
             return Ok(this.entityCRUD.GetAll<ManagingAccount>().ToList()); 
         }
 
+       [HttpGet]
+       [Route("search")]
+       public IActionResult searchManagingAccount([FromQuery] string keyword)
+        {
+            if(keyword == null)
+            {
+                keyword = "";
+            }
+            return Ok(this.entityCRUD.GetAll<ManagingAccount>(x => x.Name.ToLower().Contains(keyword.ToLower())).ToList());
+        }
+
         // GET: api/ManagingAccounts/5
         // Lấy về chi tiết tài khoản
         [HttpGet("{id}")]

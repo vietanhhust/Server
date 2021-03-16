@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -14,6 +15,7 @@ using ServerAPI.Controllers.CURDs;
 using ServerAPI.Controllers.Services;
 using ServerAPI.Model.Database;
 using ServerAPI.Model.Errors;
+using ServerAPI.Model.Hubs;
 using ServerAPI.Model.StaticModel;
 
 namespace ServerAPI.Controllers.Authentication
@@ -26,14 +28,17 @@ namespace ServerAPI.Controllers.Authentication
         private ClientManagerContext context;
         private EntityCRUDService entityCRUD;
         private PasswordService passwordService;
+        private IHubContext<AdminPageHub> adminHub;
         public AuthenticationController(IConfiguration configuration, ClientManagerContext context, 
-            EntityCRUDService entityCRUD, PasswordService passwordService
+            EntityCRUDService entityCRUD, PasswordService passwordService, IHubContext<AdminPageHub> adminHub
+
         )
         {
             this.Configuration = configuration;
             this.context = context;
             this.entityCRUD = entityCRUD;
-            this.passwordService = passwordService; 
+            this.passwordService = passwordService;
+            this.adminHub = adminHub; 
         }
 
         // Authentication cho tài khoản quản lý. 
@@ -94,7 +99,8 @@ namespace ServerAPI.Controllers.Authentication
                     token = token,
                     name = accountFound.Name,
                     groupRoleId = accountFound.GroupRoleId,
-                    role = activeRoles
+                    role = activeRoles,
+                    adminId = accountFound.Id
                 });
             }
         }
@@ -133,7 +139,7 @@ namespace ServerAPI.Controllers.Authentication
             {
                 // Check so tien con lai trong tai khoan
                 var time = (float)accoundFound.Balance / (float)groupClientFound.Price * (float)60;
-                if (time <= 2)
+                if (time <= 3)
                 {
                     return BadRequest(new ErrorModel
                     {
@@ -153,8 +159,11 @@ namespace ServerAPI.Controllers.Authentication
                 accoundFound.IsLogged = true; 
                 if(this.entityCRUD.Update<Account, Account>(accoundFound, accoundFound).Result)
                 {
-                    StaticConsts.ConnectedClient.Where(item => item.ClientId == clientId).FirstOrDefault().Account = accoundFound;
-                    Console.WriteLine(JsonConvert.SerializeObject(StaticConsts.ConnectedClient));
+                    var connected = StaticConsts.ConnectedClient.Where(item => item.ClientId == clientId).FirstOrDefault();
+                    connected.Account = accoundFound;
+                    connected.ElapsedTime = 0;
+                    connected.TimeLogin = DateTimeOffset.Now.ToUnixTimeSeconds();
+                    this.adminHub.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
                     return Ok(accoundFound);
                 }
                 else
@@ -192,7 +201,13 @@ namespace ServerAPI.Controllers.Authentication
                 accountFound.IsLogged = false; 
                 if(this.entityCRUD.Update<Account, Account>(accountFound, accountFound).Result)
                 {
-                    StaticConsts.ConnectedClient.Where(item => item.ClientId == clientId).FirstOrDefault().Account = null; 
+                    var connected = StaticConsts.ConnectedClient.Where(item => item.ClientId == clientId).FirstOrDefault(); 
+                    connected.Account = null;
+                    connected.ElapsedTime = 0;
+                    connected.TimeLogin = 0;
+                    connected.ConnectionId = null; 
+                    this.adminHub.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
+                    Console.WriteLine("Đã logout");
                     return Ok(StaticConsts.ConnectedClient);
                 }
                 else

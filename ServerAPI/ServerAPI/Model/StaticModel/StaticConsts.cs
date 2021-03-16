@@ -73,6 +73,8 @@ namespace ServerAPI.Model.StaticModel
         public string ConnectionId { get; set; }
         public int ClientId { get; set; }
         public Account Account { get; set; }
+        public long? TimeLogin { get; set; }
+        public int? ElapsedTime { get; set; }
     }
 
     // Đại diện cho 1 admin page đang connect
@@ -94,4 +96,50 @@ namespace ServerAPI.Model.StaticModel
           
         }
     }
+
+   
+
+    
 }
+
+// Dùng để xử lý list category item. 
+public class CategoryOrder
+{
+    public int CategoryId { get; set; }
+    public string CategoryName { get; set; }
+    public int Quantity { get; set; }
+    public int UnitPrice { get; set; }
+}
+
+// Dùng để xử lý Order từ người dùng. 
+public class OrderCreating
+{
+    public int? AccountId { get; set; }
+    public int AdminId { get; set; }
+    public long CreatedTime { get; set; }
+    public int? ClientId { get; set; }
+    public List<CategoryOrder> ListCategory { get; set; }
+}
+
+// Dùng để lấy ra lịch sử nạp, trừ tiền.
+public class HistoryBalanceQueryModel
+{
+    public long? fromDate { get; set; }
+    public long? toDate { get; set; }
+    public int? accountId { get; set; }
+    public bool typeChange { get; set; }
+}
+
+
+// Dùng để query ra lịch sử gọi đồ. 
+public class HistoryOrderQueryModel
+{
+    public long? fromDate { get; set; }
+    public long? toDate { get; set; }
+    public int? accountId { get; set; }
+    public int? adminId { get; set;  }
+    public int? clientId { get; set; }
+}
+
+// Dùng để gửi dữ liệu order và order details 
+

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ServerAPI.Model.StaticModel;
 using Newtonsoft.Json;
+using System.Threading;
 
 namespace ServerAPI.Model.Hubs
 {
@@ -38,16 +39,17 @@ namespace ServerAPI.Model.Hubs
             // Đổi trạng thái của ListClient connected
             var connected = StaticConsts.ConnectedClient.Where(x => x.ClientId == CLientId).FirstOrDefault();
             connected.ConnectionId = this.Context.ConnectionId;
-
-             
+            connected.ElapsedTime = 0;
+            connected.TimeLogin = DateTimeOffset.Now.ToUnixTimeSeconds(); 
             connected.Account = this.entityCRUD.GetAll<Account>(x => x.Id == UserId).FirstOrDefault();
-           
+
             var client = this.entityCRUD.GetAll<Client>(x => x.ClientId == CLientId).FirstOrDefault();
             StaticConsts.ConnectedClient.ForEach(item =>
             {
                 Console.WriteLine("Clien-Id: " + item.ClientId + ", ConnectedId: " + item.ConnectionId);
             });
             Console.WriteLine("Máy: " + CLientId);
+            this.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
             return base.OnConnectedAsync();
         }
 
@@ -58,7 +60,10 @@ namespace ServerAPI.Model.Hubs
             var UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
             var connectedFound = StaticConsts.ConnectedClient.Where(x => x.ClientId== CLientId).FirstOrDefault();
             connectedFound.ConnectionId = "";
+            connectedFound.TimeLogin = 0;
+            connectedFound.ElapsedTime = 0; 
 
+            this.adminHubs.Clients.All.SendAsync("removeMessenger", this.Context.ConnectionId);
             if(connectedFound.Account is null)
             {
 
@@ -74,7 +79,8 @@ namespace ServerAPI.Model.Hubs
                 }
                 connectedFound.Account = null;
             }
-            
+
+            this.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
             return base.OnDisconnectedAsync(exception);
         }
 
@@ -99,8 +105,12 @@ namespace ServerAPI.Model.Hubs
             account.Balance -= (int)Math.Round(cost);
             Console.WriteLine("trừ tiền: {0}", (int)Math.Round(cost));
             var updateResult = this.entityCRUD.Update<Account, Account>(account, account).Result;
-            Console.WriteLine(cost);
             // Khi trừ tiền, thì phát ra cho trang admin biết. Dùng IHubContext, đoạn này viết sau.
+
+            var connectedFound = StaticConsts.ConnectedClient.Where(x => x.ClientId == client.ClientId).FirstOrDefault();
+            connectedFound.Account.Balance -= (int)Math.Round(cost);
+            connectedFound.ElapsedTime += 1;
+            this.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
         }
 
         // Gửi cho server, ở bên hub khác. 
@@ -109,7 +119,15 @@ namespace ServerAPI.Model.Hubs
         {
             Console.WriteLine(accountName + " : " + mess);
             var clientId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]);
-            this.adminHubs.Clients.All.SendAsync("fromClient", mess, accountName, this.Context.ConnectionId, clientId);
+            int elapsed = 0; 
+            var timeCreated = DateTimeOffset.Now.ToUnixTimeSeconds(); 
+            while ((StaticConsts.AdminConnected.Count==0)&& (elapsed < 300))
+            {
+                elapsed++;
+                Console.WriteLine("Không có admin được kết nối");
+                Thread.Sleep(1000);
+            }
+            this.adminHubs.Clients.All.SendAsync("fromClient", mess, accountName, this.Context.ConnectionId, clientId, timeCreated);
         }
 
         // Nhận tin nhắn từ hub bên server
@@ -120,5 +138,41 @@ namespace ServerAPI.Model.Hubs
         }
 
         
+        // Phần này xử lý cho các yêu cầu đồ ăn gọi đến. 
+        // Gửi cho hubAdmin để xử lý. 
+        [HubMethodName("orderFood")]
+        public Task OrderFood(string categoryItems)
+        {
+            var CLientId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["Client-Id"]);
+            var UserId = Convert.ToInt32(this.Context.GetHttpContext().Request.Headers["User-Id"]);
+            var userFound = this.entityCRUD.GetAll<Account>(x => x.Id == UserId).FirstOrDefault();
+
+            int elapsed = 0; 
+            // Chờ 5 phút, nếu không có admin đang nghe thì cho tin nhắn hàng chờ. 
+            while (StaticConsts.AdminConnected.Count==0 && elapsed <=300) {
+                elapsed++; 
+                Thread.Sleep(1000);
+            }
+
+            // Những trường cần gửi đến admin ( theo thứ tự ):
+            // timeStamp, connectionId, clientId, accountName, lstCategory( dưới dạng Jsonstring ) 
+            var timeCreated = DateTimeOffset.Now.ToUnixTimeSeconds();
+            return this.adminHubs.Clients.All.SendAsync("orderComing", 
+                timeCreated, 
+                this.Context.ConnectionId,
+                CLientId,
+                userFound.AccountName, 
+                categoryItems, 
+                userFound.Id
+                );
+            
+        }
+
+        // Phần này gửi ảnh chụp màn hình đến cho admin
+        [HubMethodName("sendImage")]
+        public Task sendImage(string base64)
+        {
+            return this.adminHubs.Clients.All.SendAsync("imageFromClient", base64);
+        }
     }
 }

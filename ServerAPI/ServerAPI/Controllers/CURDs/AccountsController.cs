@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -23,13 +24,15 @@ namespace ServerAPI.Controllers.CURDs
         private EntityCRUDService entityCRUD;
         private PasswordService passwordService;
         private IHubContext<ClientHub> hubContext;
+        private IHubContext<AdminPageHub> adminHub; 
         public AccountsController(ClientManagerContext context, EntityCRUDService entityCRUD,
-            PasswordService passwordService, IHubContext<ClientHub> hubContext)
+            PasswordService passwordService, IHubContext<ClientHub> hubContext, IHubContext<AdminPageHub> adminHub)
         {
             this.entityCRUD = entityCRUD;
             this.passwordService = passwordService;
             this.context = context;
-            this.hubContext = hubContext; 
+            this.hubContext = hubContext;
+            this.adminHub = adminHub; 
         }
 
         // Lấy ra account
@@ -223,7 +226,12 @@ namespace ServerAPI.Controllers.CURDs
         [Route("balance")]
         public IActionResult addBalance([FromBody] BalanceModel model)
         {
-            if(model.Money < 0)
+            // Tìm tài khoản của admin gửi Đến. 
+            var adminName = this.HttpContext.User.Claims.First(c => c.Type == "Name").Value;
+            Console.WriteLine(adminName);
+            var adminFound = this.entityCRUD.GetAll<ManagingAccount>(x => x.Name == adminName).FirstOrDefault();
+
+            if (model.Money < 0)
             {
                 return BadRequest(new ErrorModel()
                 {
@@ -237,8 +245,6 @@ namespace ServerAPI.Controllers.CURDs
             }
             acc.Balance += model.Money;
             acc.ElaspedTime += model.Money;
-            Console.WriteLine(acc.ElaspedTime);
-            Console.WriteLine(acc.Balance);
             if(this.entityCRUD.Update<Account, Account>(acc, acc).Result)
             {
                 // Gửi số tiền mới về tài khoản đang kết nối
@@ -268,9 +274,40 @@ namespace ServerAPI.Controllers.CURDs
                     this.hubContext.Clients.
                         Client(clientConnected.ConnectionId).
                             SendAsync("balanceChange", (float)acc.Balance);
+                    
                 }
 
-                return Ok();
+                if (adminFound != null)
+                {
+                    // typeChange = true tức là trừ tiền. 
+                    var result = this.entityCRUD.Add<HistoryChangeBalance>(new HistoryChangeBalance()
+                    {
+                        AccountId = acc.Id.Value, 
+                        Cost = model.Money, 
+                        ManagingAccountId = adminFound.Id.Value,
+                        TypeChange = false, 
+                        TimeChange = DateTimeOffset.Now.ToUnixTimeSeconds(), 
+                    }).Result;
+
+
+                    if (result)
+                    {
+                        if(clientConnected != null)
+                        {
+                            clientConnected.Account.Balance += model.Money;
+                        }
+                        this.adminHub.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
+                        return Ok();
+                    }
+                    else
+                    {
+                        return BadRequest(); 
+                    }
+                }
+                else
+                {
+                    return Ok(); 
+                }
             }
             else
             {
@@ -283,7 +320,13 @@ namespace ServerAPI.Controllers.CURDs
         [Route("refund")]
         public IActionResult refundBalance([FromBody] BalanceModel model)
         {
-            if(model.Money < 0)
+            // Tài khoản admin
+            var adminName = this.HttpContext.User.Claims.First(c => c.Type == "Name").Value;
+            //Console.WriteLine(adminName);
+            var adminFound = this.entityCRUD.GetAll<ManagingAccount>(x => x.Name == adminName).FirstOrDefault();
+
+
+            if (model.Money < 0)
             {
                 return BadRequest(new ErrorModel()
                 {
@@ -334,9 +377,29 @@ namespace ServerAPI.Controllers.CURDs
                     this.hubContext.Clients.
                         Client(clientConnected.ConnectionId).
                             SendAsync("balanceChange", (float)accountFound.Balance);
+                    
                 }
 
-                return Ok();
+                var result = this.entityCRUD.Add<HistoryChangeBalance>(new HistoryChangeBalance()
+                {
+                    AccountId = accountFound.Id.Value,
+                    ManagingAccountId = adminFound.Id.Value,
+                    Cost = model.Money,
+                    TimeChange = DateTimeOffset.Now.ToUnixTimeSeconds(),
+                    TypeChange = true
+                }).Result;
+
+                if (result)
+                {
+                    if(clientConnected != null)
+                    {
+                        clientConnected.Account.Balance -= model.Money;
+                    }
+                    this.adminHub.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
+                    return Ok();
+                }
+                else
+                    return BadRequest();
             }
             else
             {
@@ -347,9 +410,21 @@ namespace ServerAPI.Controllers.CURDs
             }
         }
 
-        private bool AccountExists(int? id)
+        [Route("testAdd")]
+        public IActionResult testAdd()
         {
-            return context.Accounts.Any(e => e.Id == id);
+            //var result = this.entityCRUD.Add<HistoryChangeBalance>().Result;
+            this.context.HistoryChangeBalances.Add(new HistoryChangeBalance()
+            {
+                AccountId = 1,
+                Cost = 5000,
+                ManagingAccountId = 1,
+                TypeChange = true,
+                TimeChange = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            });
+            this.context.SaveChanges(); 
+            return Ok();
+
         }
     }
 }

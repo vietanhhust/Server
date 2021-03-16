@@ -5,12 +5,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ServerAPI.Controllers.CURDs;
 using ServerAPI.Model.Database;
+using ServerAPI.Model.Hubs;
 using ServerAPI.Model.StaticModel;
 
 namespace ServerAPI
@@ -65,8 +67,10 @@ namespace ServerAPI
                           StaticConsts.ConnectedClient.Add(new ClientConnect
                           {
                               ClientId = item.ClientId,
-                              ConnectionId = "", 
-                              Account = null
+                              ConnectionId = "",
+                              Account = null,
+                              ElapsedTime = 0, 
+                              TimeLogin = 0
                           });
                       });
 
@@ -85,7 +89,31 @@ namespace ServerAPI
                 }
             }
 
+            using (var serviceScope = host.Services.CreateScope())
+            {
+                var services = serviceScope.ServiceProvider;
+                try
+                {
+                    var entityCrud = services.GetRequiredService<EntityCRUDService>();
+                    var adminSignalR = services.GetRequiredService<IHubContext<AdminPageHub>>();
+
+                    new Thread(() =>
+                    {
+                        while (true)
+                        {
+                            adminSignalR.Clients.All.SendAsync("dashboard", StaticConsts.ConnectedClient);
+                            Thread.Sleep(30000);
+                        }
+                    }).Start(); 
+                }
+                catch
+                {
+
+                }
+            }
+            
             return host; 
         }
-    }
+        }
 }
+

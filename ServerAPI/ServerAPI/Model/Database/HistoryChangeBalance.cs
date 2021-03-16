@@ -14,7 +14,7 @@ namespace ServerAPI.Model.Database
         public bool TypeChange { get; set; }
         public long? TimeChange { get; set; }
 
-        public virtual Account Account { get; set; }
-        public virtual ManagingAccount ManagingAccount { get; set; }
+       public virtual Account Account { get; set; }
+       public virtual ManagingAccount ManagingAccount { get; set; }
     }
 }

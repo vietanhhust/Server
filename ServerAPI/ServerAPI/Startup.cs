@@ -109,30 +109,32 @@ namespace ServerAPI
                 app.UseDeveloperExceptionPage();
             }
 
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Path.ToString().Contains("/ws"))
-                {
-                    if (context.WebSockets.IsWebSocketRequest)
-                    {
-                        using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
-                        {
-                            //await Echo(context, webSocket);
-                            StaticConsts.Socket = webSocket;
-                            Console.WriteLine("có kết nôi");
-                        }
-                    }
-                    else
-                    {
-                        context.Response.StatusCode = 400;
-                    }
-                }
-                else
-                {
-                    await next();
-                }
+            
 
-            });
+            //app.Use(async (context, next) =>
+            //{
+            //    if (context.Request.Path.ToString().Contains("/ws"))
+            //    {
+            //        if (context.WebSockets.IsWebSocketRequest)
+            //        {
+            //            using (WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync())
+            //            {
+            //                //await Echo(context, webSocket);
+            //                StaticConsts.Socket = webSocket;
+            //                Console.WriteLine("có kết nôi");
+            //            }
+            //        }
+            //        else
+            //        {
+            //            context.Response.StatusCode = 400;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        await next();
+            //    }
+
+            //});
 
             app.UseRouting();
 
@@ -157,7 +159,7 @@ namespace ServerAPI
                 });
                 endpoints.MapHub<ClientHub>("/client");
             });
-
+            
             app.UseStaticFiles(); 
         }
     }

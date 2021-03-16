@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper; 
+using AutoMapper;
+using ServerAPI.Model.StaticModel;
 
 namespace ServerAPI.Model.Mappings
 {
@@ -28,6 +29,8 @@ namespace ServerAPI.Model.Mappings
                 {
                 }
             });
+            this.CreateMap(typeof(OrderCreating), typeof(OrderCreating)).ReverseMap().
+                    ForAllMembers(opt => opt.Condition((src, des, srcMember) => srcMember != null));
         }
 
         // Hiện tại chỉ cần map đúng để thực hiện CRUD
